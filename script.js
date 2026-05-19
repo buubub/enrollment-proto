@@ -4,215 +4,199 @@ createApp({
     setup() {
         const selectedCategory = ref('all');
         const selectedSemester = ref('');
-        const selectedSubject = ref('');
-        const selectedClass = ref('');
-
-        const isLoading = ref(true);
-        const error = ref(null);
+        const selectedSubjectId = ref(null);
+        const selectedClassId = ref(null);
+        const selectedPriority = ref(null);
 
         const subjects = ref([]);
-
         const enrollments = ref([]);
-
-        const completedCourses = ref([
-            { id: 1, code: 'TF0000', name: 'Pengantar Teknologi Informasi', grade: 'A', subjectId: 0 }, // Added subjectId for matching
-            { id: 2, code: 'ENGL001', name: 'English for Academic Purposes', grade: 'B+', subjectId: null }
-        ]);
-
+        const completedCourses = ref([]);
         const failedCourses = ref([]);
+
+        // Search related
+        const searchKeyword = ref('');
+        const searchResults = ref([]);
+        const searched = ref(false);
 
         const loadSubjects = async () => {
             try {
-                isLoading.value = true;
                 const response = await fetch('data.json');
-                if (!response.ok) {
-                    throw new Error('Failed to load subjects data');
-                }
                 const data = await response.json();
                 subjects.value = data.subjects;
-                error.value = null;
+                completedCourses.value = data.completedCourses || [];
+                failedCourses.value = data.failedCourses || [];
             } catch (err) {
-                error.value = err.message;
-                console.error('Error loading subjects:', err);
-            } finally {
-                isLoading.value = false;
+                alert(err)
             }
         };
 
-        onMounted(() => {
-            loadSubjects();
+        onMounted(() => loadSubjects());
+
+        const selectedSubject = computed(() => {
+            if (!selectedSubjectId.value) return null;
+            return subjects.value.find(s => s.id === selectedSubjectId.value);
         });
 
-        // Get completed subject IDs for prerequisite checking
-        const completedSubjectIds = computed(() => {
-            // Map completed courses to subject IDs based on code matching
-            const ids = [];
-            completedCourses.value.forEach(course => {
-                // Try to find matching subject by code
-                const matchingSubject = subjects.value.find(s => s.code === course.code);
-                if (matchingSubject) {
-                    ids.push(matchingSubject.id);
-                }
-                if (course.subjectId) {
-                    ids.push(course.subjectId);
-                }
-            });
-            return ids;
+        const selectedClass = computed(() => {
+            if (!selectedClassId.value || !selectedSubject.value) return null;
+            return selectedSubject.value.classes.find(c => c.id === selectedClassId.value);
         });
 
-        // Check if prerequisites are met for a subject
-        const arePrerequisitesMet = (subject) => {
-            if (!subject.prerequisites || subject.prerequisites.length === 0) {
-                return true; // No prerequisites means always met
-            }
+        const completedCourseIds = computed(() => {
+            return completedCourses.value.map(c => c.subjectId);
+        });
 
-            // Check if all prerequisite IDs are in completed courses
-            return subject.prerequisites.every(prereqId =>
-                completedSubjectIds.value.includes(prereqId)
-            );
+        const isCourseCompleted = (subjectId) => {
+            return completedCourseIds.value.includes(subjectId);
         };
 
-        // Get unmet prerequisites list
-        const getUnmetPrerequisites = (subject) => {
-            if (!subject.prerequisites || subject.prerequisites.length === 0) {
-                return [];
-            }
-
-            return subject.prerequisites.filter(prereqId =>
-                !completedSubjectIds.value.includes(prereqId)
-            );
+        const hasPrereqs = (subject) => {
+            if (!subject?.prerequisites?.length) return true;
+            return subject.prerequisites.every(id => completedCourseIds.value.includes(id));
         };
 
-        // Get prerequisite status for display
-        const getPrerequisiteStatus = (subject) => {
-            if (!subject.prerequisites || subject.prerequisites.length === 0) {
-                return { met: true, text: 'None', unmetList: [] };
+        const prereqStatus = (subject) => {
+            if (!subject?.prerequisites?.length) {
+                return { met: true, text: 'None', missing: [], unmetNames: [] };
             }
 
-            const met = arePrerequisitesMet(subject);
-            const unmetList = getUnmetPrerequisites(subject);
-
-            const prereqNames = subject.prerequisites.map(prereqId => {
-                const prereqSubject = subjects.value.find(s => s.id === prereqId);
-                return prereqSubject ? `${prereqSubject.code} - ${prereqSubject.name}` : `ID: ${prereqId}`;
+            const missing = subject.prerequisites.filter(id => !completedCourseIds.value.includes(id));
+            const names = subject.prerequisites.map(id => {
+                const s = subjects.value.find(s => s.id === id);
+                return s?.code || id;
             });
 
             return {
-                met: met,
-                text: prereqNames.join(', '),
-                unmetList: unmetList,
-                unmetNames: unmetList.map(prereqId => {
-                    const prereqSubject = subjects.value.find(s => s.id === prereqId);
-                    return prereqSubject ? `${prereqSubject.code} - ${prereqSubject.name}` : `ID: ${prereqId}`;
+                met: missing.length === 0,
+                text: names.join(', '),
+                missing: missing,
+                unmetNames: missing.map(id => {
+                    const s = subjects.value.find(s => s.id === id);
+                    return s ? `${s.code} - ${s.name}` : id;
                 })
             };
         };
 
-        const categoryFilteredSubjects = computed(() => {
-            let filtered = subjects.value;
-
-            if (selectedCategory.value !== 'all') {
-                filtered = filtered.filter(s => s.category === selectedCategory.value);
-            }
-
-            return filtered;
+        const categoryFiltered = computed(() => {
+            if (selectedCategory.value === 'all') return subjects.value;
+            return subjects.value.filter(s => s.category === selectedCategory.value);
         });
 
         const uniqueSemesters = computed(() => {
-            const semesters = new Set();
-            categoryFilteredSubjects.value.forEach(subject => {
-                semesters.add(subject.semester);
-            });
+            const semesters = new Set(categoryFiltered.value.map(s => s.semester));
             return Array.from(semesters).sort((a, b) => a - b);
         });
 
         const filteredSubjects = computed(() => {
-            let filtered = categoryFilteredSubjects.value;
-
-            if (selectedSemester.value) {
-                filtered = filtered.filter(s => s.semester === parseInt(selectedSemester.value));
-            }
-
+            if (!selectedSemester.value) return [];
+            let filtered = categoryFiltered.value;
+            filtered = filtered.filter(s => s.semester === selectedSemester.value);
+            // Also filter out completed courses from the dropdown
+            filtered = filtered.filter(s => !isCourseCompleted(s.id));
             return filtered;
         });
 
-        const selectedSubjectDetails = computed(() => {
-            if (!selectedSubject.value) return null;
-            return subjects.value.find(s => s.id === parseInt(selectedSubject.value));
+        const prereqForSelected = computed(() => prereqStatus(selectedSubject.value));
+
+        const isSelectedCourseCompleted = computed(() => {
+            if (!selectedSubject.value) return false;
+            return isCourseCompleted(selectedSubject.value.id);
         });
 
-        const selectedClassDetails = computed(() => {
-            if (!selectedClass.value || !selectedSubjectDetails.value) return null;
-            return selectedSubjectDetails.value.classes.find(c => c.id === parseInt(selectedClass.value));
+        const showClassSelection = computed(() => {
+            return selectedSubject.value &&
+                   !isSelectedCourseCompleted.value &&
+                   prereqForSelected.value.met &&
+                   selectedSubject.value.classes &&
+                   selectedSubject.value.classes.length > 0;
         });
-
-        const selectedClassName = computed(() => {
-            return selectedClassDetails.value ? selectedClassDetails.value.name : null;
-        });
-
-        // Check if selected subject meets prerequisites
-        const doesSelectedSubjectMeetPrerequisites = computed(() => {
-            if (!selectedSubjectDetails.value) return true;
-            return arePrerequisitesMet(selectedSubjectDetails.value);
-        });
-
-        // Get prerequisite status for selected subject
-        const selectedSubjectPrerequisiteStatus = computed(() => {
-            if (!selectedSubjectDetails.value) return { met: true, text: 'None', unmetList: [], unmetNames: [] };
-            return getPrerequisiteStatus(selectedSubjectDetails.value);
-        });
-
-        const getPrerequisitesText = (subject) => {
-            if (!subject.prerequisites || subject.prerequisites.length === 0) {
-                return 'None';
-            }
-            const prereqNames = subject.prerequisites.map(prereqId => {
-                const prereqSubject = subjects.value.find(s => s.id === prereqId);
-                return prereqSubject ? `${prereqSubject.code} - ${prereqSubject.name}` : `ID: ${prereqId}`;
-            });
-            return prereqNames.join(', ');
-        };
-
-        const isSubjectEnrolled = (subjectId) => {
-            return enrollments.value.some(item => item.subjectId === subjectId);
-        };
 
         const totalCredits = computed(() => {
-            return enrollments.value.reduce((total, item) => total + item.credits, 0);
+            const uniqueSubjectIds = new Set();
+            enrollments.value.forEach(item => {
+                uniqueSubjectIds.add(item.subjectId);
+            });
+
+            // Sum credits for unique subjects
+            let total = 0;
+            uniqueSubjectIds.forEach(subjectId => {
+                const subject = subjects.value.find(s => s.id === subjectId);
+                if (subject) {
+                    total += subject.credits;
+                }
+            });
+            return total;
+        });
+
+        const enrolledClassIdsForSelectedSubject = computed(() => {
+            if (!selectedSubject.value) return [];
+            return enrollments.value
+                .filter(e => e.subjectId === selectedSubject.value.id)
+                .map(e => e.classId);
+        });
+
+        const usedPrioritiesForSelectedSubject = computed(() => {
+            if (!selectedSubject.value) return [];
+            return enrollments.value
+                .filter(e => e.subjectId === selectedSubject.value.id)
+                .map(e => parseInt(e.priority));
+        });
+
+        const isClassEnrolled = (classId) => {
+            return enrolledClassIdsForSelectedSubject.value.includes(classId);
+        };
+
+        const isPriorityUsed = (priority) => {
+            const priorityNum = parseInt(priority);
+            return usedPrioritiesForSelectedSubject.value.includes(priorityNum);
+        };
+
+        const getAvailablePriorities = () => {
+            const allPriorities = [1, 2, 3];
+            const used = usedPrioritiesForSelectedSubject.value;
+            return allPriorities.filter(p => !used.includes(p));
+        };
+
+        watch(selectedClassId, () => {
+            selectedPriority.value = null;
         });
 
         const addToEnrollment = () => {
-            if (!selectedSemester.value) {
-                alert('Please select a semester');
-                return;
-            }
-            if (!selectedSubject.value) {
-                alert('Please select a subject');
-                return;
-            }
-            if (!selectedClass.value) {
-                alert('Please select a class');
+            if (!selectedSemester.value) return alert('Please select a semester');
+            if (!selectedSubjectId.value) return alert('Please select a subject');
+            if (!selectedClassId.value) return alert('Please select a class');
+            if (!selectedPriority.value) return alert('Please select a priority');
+
+            const subject = selectedSubject.value;
+            const classItem = selectedClass.value;
+            const priorityNum = parseInt(selectedPriority.value);
+
+            if (isCourseCompleted(subject.id)) {
+                alert(`❌ Cannot enroll in ${subject.code} - ${subject.name}\n\nThis course has already been completed with grade: ${completedCourses.value.find(c => c.subjectId === subject.id)?.grade}\n\nYou cannot retake a completed course.`);
                 return;
             }
 
-            const subject = selectedSubjectDetails.value;
-            const classItem = selectedClassDetails.value;
-
-            // Check prerequisites before adding
-            if (!arePrerequisitesMet(subject)) {
-                const prereqStatus = getPrerequisiteStatus(subject);
-                alert(`⚠️ Cannot enroll in ${subject.code} - ${subject.name}\n\nYou have not met the prerequisite(s):\n${prereqStatus.unmetNames.join('\n')}\n\nPlease complete these courses first.`);
+            if (!hasPrereqs(subject)) {
+                const status = prereqStatus(subject);
+                alert(`Cannot enroll in ${subject.code} - ${subject.name}\n\nMissing prerequisites:\n${status.unmetNames.join('\n')}`);
                 return;
             }
 
-            if (isSubjectEnrolled(subject.id)) {
-                alert(`${subject.code} - ${subject.name} is already in your enrollment cart.`);
+            if (isClassEnrolled(classItem.id)) {
+                alert(`❌ ${subject.code} - ${subject.name} (${classItem.name}) is already in your enrollment.\n\nYou can only enroll in different class schedules for the same subject.`);
                 return;
             }
 
-            const enrollmentItem = {
+            if (isPriorityUsed(priorityNum)) {
+                const available = getAvailablePriorities();
+                alert(`❌ Priority ${priorityNum} is already used for another class of ${subject.code}.\n\nAvailable priorities: ${available.join(', ')}`);
+                return;
+            }
+
+            const newEnrollment = {
                 id: Date.now(),
                 subjectId: subject.id,
+                classId: classItem.id,
                 code: subject.code,
                 name: subject.name,
                 semester: selectedSemester.value,
@@ -220,116 +204,198 @@ createApp({
                 policy: subject.policy,
                 className: classItem.name,
                 schedules: classItem.schedules,
-                addedAt: new Date().toLocaleString()
+                priority: priorityNum
             };
 
-            enrollments.value.push(enrollmentItem);
-
-            selectedSubject.value = '';
-            selectedClass.value = '';
-
-            alert(`✅ Added: ${subject.code} - ${subject.name} (${classItem.name})`);
-        };
-
-        // Validate subject selection (when picking from dropdown)
-        const validateSubjectSelection = () => {
-            if (!selectedSubjectDetails.value) return;
-
-            const subject = selectedSubjectDetails.value;
-
-            if (!arePrerequisitesMet(subject)) {
-                const prereqStatus = getPrerequisiteStatus(subject);
-                alert(`⚠️ Prerequisite Warning\n\n${subject.code} - ${subject.name}\n\nMissing prerequisites:\n${prereqStatus.unmetNames.join('\n')}\n\nYou can still select this subject, but you won't be able to enroll until prerequisites are met.`);
+            const overlap = checkScheduleOverlap(newEnrollment);
+            if (overlap.overlap) {
+                alert(`❌ Schedule Conflict!\n\n${subject.code} - ${subject.name} (${classItem.name})\nconflicts with:\n${overlap.with.code} - ${overlap.with.name} (${overlap.with.className})\n\nConflict: ${overlap.schedule.day} ${overlap.schedule.time}\n\nPlease choose a different class or remove the conflicting enrollment.`);
+                return;
             }
 
-            // Reset class selection when subject changes
-            selectedClass.value = '';
+            enrollments.value.push(newEnrollment);
+
+            selectedSubjectId.value = null;
+            selectedClassId.value = null;
+            selectedPriority.value = null;
+
+            alert(`Added: ${subject.code} - ${subject.name} (${classItem.name}) - Priority ${priorityNum}`);
         };
 
-        const removeFromEnrollment = (itemId) => {
-            const item = enrollments.value.find(i => i.id === itemId);
-            if (item && confirm(`Remove ${item.code} - ${item.name} from enrollment?`)) {
-                enrollments.value = enrollments.value.filter(i => i.id !== itemId);
+        const removeEnrollment = (id) => {
+            const item = enrollments.value.find(e => e.id === id);
+            if (item && confirm(`Remove ${item.code} - ${item.name} (${item.className})?`)) {
+                enrollments.value = enrollments.value.filter(e => e.id !== id);
             }
         };
 
         const clearEnrollments = () => {
-            if (enrollments.value.length > 0 && confirm('Clear all items from enrollment summary?')) {
+            if (enrollments.value.length && confirm('Clear all items?')) {
                 enrollments.value = [];
+                resetForm();
             }
         };
 
         const validateEnrollments = () => {
-            if (enrollments.value.length === 0) {
-                alert('No items in enrollment cart to validate.');
-                return;
-            }
+            if (!enrollments.value.length) return alert('No items to validate');
 
-            let message = `✅ Validation Summary\n\n`;
-            message += `Total Items: ${enrollments.value.length}\n`;
-            message += `Total Credits: ${totalCredits.value}\n\n`;
-            message += `Enrolled Subjects:\n`;
-            message += `─────────────────\n`;
-
-            enrollments.value.forEach((item, index) => {
-                message += `${index + 1}. ${item.code} - ${item.name}\n`;
-                message += `   Class: ${item.className} | Semester: ${item.semester}\n`;
-                message += `   Policy: ${item.policy}\n`;
-            });
-
-            alert(message);
-        };
-
-        const submitAllEnrollments = () => {
-            if (enrollments.value.length === 0) {
-                alert('No items in enrollment cart.');
-                return;
-            }
-
-            // Check prerequisites for all items before submission
-            const invalidItems = [];
+            const grouped = {};
             enrollments.value.forEach(item => {
-                const subject = subjects.value.find(s => s.id === item.subjectId);
-                if (subject && !arePrerequisitesMet(subject)) {
-                    invalidItems.push(`${item.code} - ${item.name}`);
-                }
+                if (!grouped[item.code]) grouped[item.code] = [];
+                grouped[item.code].push(item);
             });
 
-            if (invalidItems.length > 0) {
-                alert(`❌ Cannot submit enrollment!\n\nThe following subjects have unmet prerequisites:\n${invalidItems.join('\n')}\n\nPlease remove them and complete prerequisites first.`);
+            let msg = `✅ Validation\n\nTotal Items: ${enrollments.value.length}\nTotal Credits: ${totalCredits.value}\n\n`;
+
+            for (const [code, items] of Object.entries(grouped)) {
+                msg += `\n📚 ${code}:\n`;
+                items.forEach((item, idx) => {
+                    msg += `   ${idx + 1}. ${item.className} | Priority ${item.priority} | Sem ${item.semester}\n`;
+                });
+            }
+
+            alert(msg);
+        };
+
+        const performSearch = () => {
+            if (!searchKeyword.value.trim()) {
+                alert('Please enter a keyword to search');
                 return;
             }
 
-            alert(`✅ Successfully enrolled in ${enrollments.value.length} subject(s)!\n\nTotal Credits: ${totalCredits.value}`);
-            // Optionally clear after submission
-            // enrollments.value = [];
+            const keyword = searchKeyword.value.toLowerCase().trim();
+            searchResults.value = subjects.value.filter(subject => {
+                // Don't show already completed courses in search results? Or show but disable?
+                // Let's show them but with a badge indicating they're completed
+                return subject.code.toLowerCase().includes(keyword) ||
+                       subject.name.toLowerCase().includes(keyword) ||
+                       (subject.tags && subject.tags.some(tag => tag.toLowerCase().includes(keyword)));
+            });
+            searched.value = true;
         };
 
-        const resetFormSteps = () => {
+        const clearSearch = () => {
+            searchKeyword.value = '';
+            searchResults.value = [];
+            searched.value = false;
+        };
+
+        const takeSubject = (subjectId) => {
+            const subject = subjects.value.find(s => s.id === subjectId);
+            if (!subject) {
+                alert('Subject not found');
+                return;
+            }
+
+            // Check if course is already completed
+            if (isCourseCompleted(subject.id)) {
+                const completedCourse = completedCourses.value.find(c => c.subjectId === subject.id);
+                alert(`❌ Cannot select ${subject.code} - ${subject.name}\n\nThis course has already been completed with grade: ${completedCourse?.grade}\n\nYou cannot retake a completed course.`);
+                return;
+            }
+
+            const modal = document.getElementById('searchModal');
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+
+            selectedCategory.value = 'all';
+            selectedSemester.value = subject.semester;
+            selectedSubjectId.value = subject.id;
+            selectedClassId.value = null;
+            selectedPriority.value = null;
+
+            clearSearch();
+
+            // Show message if prerequisites not met
+            if (!hasPrereqs(subject)) {
+                const status = prereqStatus(subject);
+                alert(`⚠️ Prerequisite Warning\n\n${subject.code} - ${subject.name}\n\nMissing prerequisites:\n${status.unmetNames.join('\n')}\n\nYou cannot enroll until you complete these courses.`);
+            }
+        };
+
+        const checkScheduleOverlap = (newEnrollment) => {
+            // Check against existing enrollments
+            for (const existing of enrollments.value) {
+                // Only check if same semester
+                if (existing.semester === newEnrollment.semester) {
+                    // Check if any schedule overlaps
+                    for (const newSchedule of newEnrollment.schedules) {
+                        for (const existingSchedule of existing.schedules) {
+                            const newDay = newSchedule.day;
+                            const existingDay = existingSchedule.day;
+                            const newTime = newSchedule.time;
+                            const existingTime = existingSchedule.time;
+
+                            if (newDay === existingDay && isTimeOverlap(newTime, existingTime)) {
+                                return {
+                                    overlap: true,
+                                    with: existing,
+                                    schedule: existingSchedule
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            return { overlap: false };
+        };
+
+        const isTimeOverlap = (time1, time2) => {
+            const parseTime = (time) => {
+                const [start, end] = time.split(' - ');
+                const startHour = parseInt(start.split(':')[0]);
+                const startMin = parseInt(start.split(':')[1] || 0);
+                const endHour = parseInt(end.split(':')[0]);
+                const endMin = parseInt(end.split(':')[1] || 0);
+                return { start: startHour + startMin/60, end: endHour + endMin/60 };
+            };
+
+            const t1 = parseTime(time1);
+            const t2 = parseTime(time2);
+
+            return (t1.start < t2.end && t1.end > t2.start);
+        };
+
+        const currentScheduleConflict = computed(() => {
+            if (!selectedClass.value || !selectedSubject.value || !selectedSemester.value) return null;
+
+            const newEnrollment = {
+                subjectId: selectedSubject.value.id,
+                classId: selectedClass.value.id,
+                code: selectedSubject.value.code,
+                name: selectedSubject.value.name,
+                semester: selectedSemester.value,
+                className: selectedClass.value.name,
+                schedules: selectedClass.value.schedules
+            };
+
+            return checkScheduleOverlap(newEnrollment);
+        });
+
+        const resetForm = () => {
             selectedSemester.value = '';
-            selectedSubject.value = '';
-            selectedClass.value = '';
+            selectedSubjectId.value = null;
+            selectedClassId.value = null;
+            selectedPriority.value = null;
+        };
+
+        const onCategoryChange = (category) => {
+            selectedCategory.value = category;
+            resetForm();
         };
 
         const onSemesterChange = () => {
-            selectedSubject.value = '';
-            selectedClass.value = '';
+            selectedSubjectId.value = null;
+            selectedClassId.value = null;
+            selectedPriority.value = null;
         };
 
         const onSubjectChange = () => {
-            selectedClass.value = '';
-            validateSubjectSelection(); // Validate when subject changes
+            selectedClassId.value = null;
+            selectedPriority.value = null;
         };
-
-        watch(selectedCategory, () => {
-            resetFormSteps();
-        });
-
-        watch(selectedSemester, (newValue, oldValue) => {
-            if (newValue !== oldValue && newValue) {
-                onSemesterChange();
-            }
-        });
 
         return {
             subjects,
@@ -337,31 +403,37 @@ createApp({
             failedCourses,
             selectedCategory,
             selectedSemester,
+            selectedSubjectId,
+            selectedClassId,
+            selectedPriority,
             selectedSubject,
             selectedClass,
-            isLoading,
-            error,
             enrollments,
             totalCredits,
-
             uniqueSemesters,
             filteredSubjects,
-            selectedSubjectDetails,
-            selectedClassName,
-            isSubjectEnrolled,
-            getPrerequisitesText,
-            doesSelectedSubjectMeetPrerequisites,
-            selectedSubjectPrerequisiteStatus,
-            arePrerequisitesMet,
-
+            prereqForSelected,
+            isClassEnrolled,
+            isPriorityUsed,
+            getAvailablePriorities,
+            usedPrioritiesForSelectedSubject,
+            showClassSelection,
+            isSelectedCourseCompleted,
+            isCourseCompleted,
+            currentScheduleConflict,
+            onCategoryChange,
             onSubjectChange,
             onSemesterChange,
             addToEnrollment,
-            removeFromEnrollment,
+            removeEnrollment,
             clearEnrollments,
             validateEnrollments,
-            submitAllEnrollments,
-            validateSubjectSelection
+            searchKeyword,
+            searchResults,
+            searched,
+            performSearch,
+            clearSearch,
+            takeSubject
         };
     }
 }).mount('#app');

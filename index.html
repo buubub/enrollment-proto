@@ -11,6 +11,9 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+    <!-- Bootstrap JS for modal -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -27,7 +30,7 @@
                     <h1 class="display-6 fw-bold mb-2">Course Enrollment</h1>
                 </div>
                 <div class="alert alert-info mb-0" role="alert">
-                    <i class="bi bi-person-circle"></i> Bobby Kwariawan [<strong>26415067</strong>]
+                    <i class="bi bi-person-circle"></i> Bobby Kwariawan [<strong>C1123456789</strong>]
                 </div>
             </div>
             <hr>
@@ -43,11 +46,14 @@
                     <h5 class="mb-0 fw-semibold">
                         <i class="bi bi-pencil-square me-2 text-primary"></i>
                         Enrollment Form
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-lg float-end" data-bs-toggle="modal" data-bs-target="#searchModal">
+                            <i class="bi bi-search me-2"></i> Search Course
+                        </button>
                     </h5>
                 </div>
 
                 <div class="card-body p-4">
-                    <form @submit.prevent="submitEnrollment">
+                    <form>
                         <!-- STEP 1: Subject Category Selection -->
                         <div class="mb-4 pb-2 border-bottom">
                             <label class="form-label fw-semibold mb-3">
@@ -58,27 +64,27 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <button type="button"
                                     :class="['btn', selectedCategory === 'all' ? 'active btn-outline-secondary' : 'btn-outline-secondary']"
-                                    @click="selectedCategory = 'all'">
+                                    @click="onCategoryChange('all')">
                                     <i class="bi bi-globe2 me-2"></i>All
                                 </button>
                                 <button type="button"
                                     :class="['btn', selectedCategory === 'program' ? 'active btn-outline-secondary' : 'btn-outline-secondary']"
-                                    @click="selectedCategory = 'program'">
+                                    @click="onCategoryChange('program')">
                                     <i class="bi bi-folder-fill me-2"></i>Jurusan
                                 </button>
                                 <button type="button"
                                     :class="['btn', selectedCategory === 'faculty' ? 'active btn-outline-secondary' : 'btn-outline-secondary']"
-                                    @click="selectedCategory = 'faculty'">
+                                    @click="onCategoryChange('faculty')">
                                     <i class="bi bi-building-fill me-2"></i>Fakultas
                                 </button>
                                 <button type="button"
                                     :class="['btn', selectedCategory === 'dmu' ? 'active btn-outline-secondary' : 'btn-outline-secondary']"
-                                    @click="selectedCategory = 'dmu'">
+                                    @click="onCategoryChange('dmu')">
                                     <i class="bi bi-universal-access me-2"></i>DMU
                                 </button>
                                 <button type="button"
                                     :class="['btn', selectedCategory === 'other' ? 'active btn-outline-secondary' : 'btn-outline-secondary']"
-                                    @click="selectedCategory = 'other'">
+                                    @click="onCategoryChange('other')">
                                     <i class="bi bi-arrow-left-right me-2"></i>Jurusan Lain
                                 </button>
                             </div>
@@ -105,8 +111,8 @@
                                 <span class="badge bg-primary rounded-circle me-2">3</span>
                                 Select Subject
                             </label>
-                            <select class="form-select form-select-lg" v-model="selectedSubject" @change="onSubjectChange">
-                                <option value="">-- Select Subject --</option>
+                            <select class="form-select form-select-lg" v-model="selectedSubjectId" @change="onSubjectChange">
+                                <option :value="null">-- Select Subject --</option>
                                 <option v-for="subject in filteredSubjects" :value="subject.id">
                                     {{ subject.code }} - {{ subject.name }}
                                 </option>
@@ -121,42 +127,120 @@
                                 Select Class
                             </label>
 
-                            <div class="row g-3 mt-1" v-if="selectedSubjectDetails && selectedSubjectDetails.classes.length > 0">
-                                <div class="col-md-6" v-for="classItem in selectedSubjectDetails.classes" :key="classItem.id">
-                                    <label class="card-class d-block border rounded mb-3" style="cursor: pointer;">
-                                        <div class="card-body">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="class"
-                                                       :value="classItem.id" v-model="selectedClass">
-                                                <span class="form-check-label fw-semibold fs-5">
-                                                    {{ classItem.name }}
-                                                </span>
-                                            </div>
-                                            <div class="ms-4 mt-3">
-                                                <small class="text-muted d-block mb-2">
-                                                    <i class="bi bi-clock-history"></i> <strong>Schedule:</strong>
-                                                </small>
-                                                <div class="ps-3 border-start border-2">
-                                                    <small v-for="schedule in classItem.schedules" :key="schedule.id"
-                                                           class="text-muted d-block mb-2">
-                                                        <i class="bi bi-calendar"></i> {{ schedule.day }} ·
-                                                        {{ schedule.time }} WIB ·
-                                                        <i class="bi bi-building"></i> {{ schedule.room }}
+                            <!-- Show completed course message -->
+                            <div v-if="selectedSubject && isSelectedCourseCompleted" class="alert alert-success mt-2">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <strong>Course Already Completed!</strong>
+                                <p class="mb-0 mt-1 small">
+                                    You have already completed {{ selectedSubject.code }} - {{ selectedSubject.name }} with grade:
+                                    <span class="fw-bold">{{ completedCourses.find(c => c.subjectId === selectedSubject.id)?.grade }}</span>
+                                </p>
+                            </div>
+
+                            <!-- Show class selection ONLY if prerequisites are met and course not completed -->
+                            <div v-else-if="showClassSelection">
+                                <div class="row g-3 mt-1">
+                                    <div class="col-md-6" v-for="classItem in selectedSubject.classes" :key="classItem.id">
+                                        <label class="card-class d-block border rounded mb-3"
+                                            :class="{ 'card-disabled': isClassEnrolled(classItem.id) }"
+                                            :style="{ cursor: isClassEnrolled(classItem.id) ? 'not-allowed' : 'pointer' }">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="class"
+                                                        :value="classItem.id" v-model="selectedClassId"
+                                                        :disabled="isClassEnrolled(classItem.id)">
+                                                    <span class="form-check-label fw-semibold fs-5">
+                                                        {{ classItem.name }}
+                                                        <span v-if="isClassEnrolled(classItem.id)" class="badge bg-secondary ms-2">Already Enrolled</span>
+                                                    </span>
+                                                </div>
+                                                <div class="ms-4 mt-3">
+                                                    <small class="text-muted d-block mb-2">
+                                                        <i class="bi bi-clock-history"></i> <strong>Schedule:</strong>
                                                     </small>
+                                                    <div class="ps-3 border-start border-2">
+                                                        <small v-for="schedule in classItem.schedules" :key="schedule.id"
+                                                            class="text-muted d-block mb-2">
+                                                            <i class="bi bi-calendar"></i> {{ schedule.day }} ·
+                                                            {{ schedule.time }} WIB ·
+                                                            <i class="bi bi-building"></i> {{ schedule.room }}
+                                                        </small>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Show prerequisite warning -->
+                            <div v-else-if="selectedSubject && !prereqForSelected.met" class="alert alert-danger mt-2">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Prerequisites Not Met!</strong>
+                                <p class="mb-0 mt-1 small">
+                                    You cannot Enroll to this subject until you complete:
+                                    <span class="fw-bold">{{ prereqForSelected.unmetNames.join(', ') }}</span>
+                                </p>
+                            </div>
+
+                            <!-- Show no classes message -->
+                            <div v-else-if="selectedSubject && selectedSubject.classes && selectedSubject.classes.length === 0" class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> No classes available for this subject.
+                            </div>
+
+                            <!-- Schedule Conflict Warning -->
+                            <div v-if="selectedClass && currentScheduleConflict && currentScheduleConflict.overlap" class="alert alert-danger mt-2">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Schedule Conflict!</strong>
+                                <p class="mb-0 mt-1 small">
+                                    This class conflicts with:<br>
+                                    <strong>{{ currentScheduleConflict.with.code }} - {{ currentScheduleConflict.with.name }} ({{ currentScheduleConflict.with.className }})</strong><br>
+                                    {{ currentScheduleConflict.schedule.day }} {{ currentScheduleConflict.schedule.time }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- STEP 5: Priority Selection -->
+                        <div class="mb-4" v-if="selectedClass">
+                            <label class="form-label fw-semibold">
+                                <span class="badge bg-primary rounded-circle me-2">5</span>
+                                Enrollment Priority
+                            </label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="priority" id="priority1" value="1" v-model="selectedPriority"
+                                        :disabled="isPriorityUsed(1)">
+                                    <label class="form-check-label" for="priority1" :class="{ 'text-muted': isPriorityUsed(1) }">
+                                        Priority 1 <span class="text-muted small">(Highest)</span>
+                                        <span v-if="isPriorityUsed(1)" class="badge bg-secondary ms-2">Taken</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="priority" id="priority2" value="2" v-model="selectedPriority"
+                                        :disabled="isPriorityUsed(2)">
+                                    <label class="form-check-label" for="priority2" :class="{ 'text-muted': isPriorityUsed(2) }">
+                                        Priority 2
+                                        <span v-if="isPriorityUsed(2)" class="badge bg-secondary ms-2">Taken</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="priority" id="priority3" value="3" v-model="selectedPriority"
+                                        :disabled="isPriorityUsed(3)">
+                                    <label class="form-check-label" for="priority3" :class="{ 'text-muted': isPriorityUsed(3) }">
+                                        Priority 3 <span class="text-muted small">(Lowest)</span>
+                                        <span v-if="isPriorityUsed(3)" class="badge bg-secondary ms-2">Taken</span>
                                     </label>
                                 </div>
                             </div>
-                            <div v-else-if="selectedSubjectDetails && selectedSubjectDetails.classes.length === 0" class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i> No classes available for this subject.
+                            <div class="form-text">
+                                Select your priority for this enrollment (1 = highest, 3 = lowest)
                             </div>
                         </div>
 
                         <!-- FORM ACTIONS -->
                         <div class="mt-4 pt-3">
-                            <button type="button" @click="addToEnrollment" class="btn btn-primary btn-lg" :disabled="!selectedSemester || !selectedSubject || !selectedClass">
+                            <button type="button" @click="addToEnrollment" class="btn btn-primary btn-lg"
+                                :disabled="!selectedSemester || !selectedSubject || !selectedClass || (currentScheduleConflict && currentScheduleConflict.overlap)">
                                 <i class="bi bi-plus me-2"></i> Add to Enrollment
                             </button>
                         </div>
@@ -176,42 +260,37 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div v-if="selectedSubjectDetails" class="py-3">
-                        <h6>{{ selectedSubjectDetails.code }} - {{ selectedSubjectDetails.name }}</h6>
-                        <p class="text-muted small">{{ selectedSubjectDetails.description }}</p>
+                    <div v-if="selectedSubject" class="py-3">
+                        <h6>{{ selectedSubject.code }} - {{ selectedSubject.name }}</h6>
+                        <p class="text-muted small">{{ selectedSubject.description }}</p>
                         <hr>
-                        <small class="text-muted">
-                            <strong>Credits:</strong> {{ selectedSubjectDetails.credits }}<br>
-                            <strong>Policy:</strong> {{ selectedSubjectDetails.policy }}
-                            <br>
-                            <strong>Prerequisites:</strong>
-                            <span v-if="selectedSubjectPrerequisiteStatus.met">
-                                <span class="text-success">{{ selectedSubjectPrerequisiteStatus.text }}</span>
+                        <div class="mb-2">
+                            <strong class="small">Credits:</strong> {{ selectedSubject.credits }}<br>
+                            <strong class="small">Policy:</strong> {{ selectedSubject.policy }}<br>
+                            <strong class="small">Prerequisites: </strong>
+                            <span v-if="prereqForSelected.text === 'None'" class="badge bg-success">
+                                None
                             </span>
-                            <span v-else>
-                                <span class="text-danger fw-bold">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                    {{ selectedSubjectPrerequisiteStatus.text }}
+                            <template v-else>
+                                <span
+                                    v-for="(prereq, idx) in prereqForSelected.text.split(', ')"
+                                    :key="idx"
+                                    :class="['badge me-1', prereqForSelected.met ? 'bg-success' : 'bg-danger']">
+                                    {{ prereq }}
                                 </span>
-                                <br>
-                                <span class="text-danger small">
-                                    ⚠️ Missing: {{ selectedSubjectPrerequisiteStatus.unmetNames.join(', ') }}
-                                </span>
-                            </span>
-                            <br>
-                            <strong>Tags: </strong>
-                            <span v-if="selectedSubjectDetails.tags && selectedSubjectDetails.tags.length > 0">
-                                <span v-for="(tag, idx) in selectedSubjectDetails.tags" :key="idx" class="badge bg-secondary me-1">
+                            </template>
+                        </div>
+
+                        <!-- Tags as badges -->
+                        <div>
+                            <strong class="small">Tags: </strong>
+                            <span v-if="selectedSubject.tags && selectedSubject.tags.length > 0">
+                                <span v-for="(tag, idx) in selectedSubject.tags" :key="idx" class="badge bg-secondary me-1">
                                     {{ tag }}
                                 </span>
                             </span>
-                            <span v-else>None</span>
-                            <br>
-                            <div v-if="!selectedSubjectPrerequisiteStatus.met" class="alert alert-warning mt-2 py-2">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                <small> You cannot enroll in this subject until you complete the prerequisite(s) above.</small>
-                            </div>
-                        </small>
+                            <span v-else class="badge bg-secondary">None</span>
+                        </div>
                     </div>
                     <div v-else class="text-muted text-center py-3">
                         <i class="bi bi-info-circle fs-1"></i>
@@ -227,16 +306,49 @@
                         <i class="bi bi-clipboard-check"></i> Completed Course
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div v-if="completedCourses.length > 0">
-                        <div v-for="course in completedCourses" :key="course.id" class="mb-2">
-                            <strong>{{ course.code }}</strong>
-                            <p class="small text-muted mb-0">{{ course.name }}</p>
-                            <small class="text-success">Grade: {{ course.grade }}</small>
-                            <hr class="my-2">
+                        <!-- Tabs navigation -->
+                        <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+                            <li class="nav-item" v-for="semester in [...new Set(completedCourses.map(c => c.semester))].sort()" :key="semester">
+                                <button class="nav-link" :class="{ active: activeSemesterTab === semester }"
+                                        data-bs-toggle="tab" :data-bs-target="'#semester-' + semester"
+                                        type="button" role="tab" @click="activeSemesterTab = semester">
+                                    Semester {{ semester }}
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab content -->
+                        <div class="tab-content">
+                            <div v-for="semester in [...new Set(completedCourses.map(c => c.semester))].sort()"
+                                :key="semester"
+                                class="tab-pane fade"
+                                :class="{ show: activeSemesterTab === semester, active: activeSemesterTab === semester }"
+                                :id="'semester-' + semester"
+                                role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 80px">Code</th>
+                                                <th>Course Name</th>
+                                                <th style="width: 80px">Grade</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="course in completedCourses.filter(c => c.semester === semester)" :key="course.id">
+                                                <td><strong>{{ course.code }}</strong></td>
+                                                <td>{{ course.name }}</td>
+                                                <td><span class="badge bg-success">{{ course.grade }}</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div v-else class="text-muted text-center py-3">
+                    <div v-else class="text-muted text-center py-5">
                         <i class="bi bi-check-circle fs-1"></i>
                         <p class="mt-2 mb-0">No completed courses yet</p>
                     </div>
@@ -250,16 +362,32 @@
                         <i class="bi bi-clipboard-x"></i> Failed Course
                     </h5>
                 </div>
-                <div class="card-body">
-                    <div v-if="failedCourses.length > 0">
-                        <div v-for="course in failedCourses" :key="course.id" class="mb-2">
-                            <strong>{{ course.code }}</strong>
-                            <p class="small text-muted mb-0">{{ course.name }}</p>
-                            <small class="text-danger">Grade: {{ course.grade }}</small>
-                            <hr class="my-2">
-                        </div>
+                <div class="card-body p-0">
+                    <div v-if="failedCourses.length > 0" class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 80px">Code</th>
+                                    <th>Course Name</th>
+                                    <th style="width: 80px">Grade</th>
+                                    <th style="width: 80px">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="course in failedCourses" :key="course.id">
+                                    <td><strong>{{ course.code }}</strong></td>
+                                    <td>{{ course.name }}</td>
+                                    <td><span class="badge bg-danger">{{ course.grade }}</span></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-warning" @click="takeSubject(course.subjectId)">
+                                            <i class="bi bi-arrow-repeat"></i> Retake
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div v-else class="text-muted text-center py-3">
+                    <div v-else class="text-muted text-center py-5">
                         <i class="bi bi-info-circle fs-1"></i>
                         <p class="mt-2 mb-0">No failed courses yet</p>
                     </div>
@@ -267,7 +395,7 @@
             </div>
 
             <!-- Important Dates Card -->
-            <div class="card shadow-sm mb-4">
+            <!-- <div class="card shadow-sm mb-4">
                 <div class="card-header bg-warning">
                     <h5 class="mb-0">
                         <i class="bi bi-calendar-event"></i> Important Dates
@@ -293,10 +421,10 @@
                         </li>
                     </ul>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Help Card -->
-            <div class="card shadow-sm">
+            <!-- <div class="card shadow-sm">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-question-circle"></i> Need Help?
@@ -316,7 +444,7 @@
                         <strong> Office Hours:</strong> Mon-Fri 7.30AM-5PM
                     </p>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -330,9 +458,6 @@
                         <span class="badge bg-light text-dark ms-2">{{ enrollments.length }} items</span>
                     </h5>
                     <div class="d-flex gap-2">
-                        <button v-if="enrollments.length > 0" @click="validateEnrollments" class="btn btn-sm btn-outline-light">
-                            <i class="bi bi-check-circle"></i> Validate
-                        </button>
                         <button v-if="enrollments.length > 0" @click="clearEnrollments" class="btn btn-sm btn-outline-light">
                             <i class="bi bi-trash3"></i> Clear All
                         </button>
@@ -349,6 +474,7 @@
                                     <th>Schedule</th>
                                     <th style="width: 70px">Credits</th>
                                     <th style="width: 100px">Policy</th>
+                                    <th style="width: 80px">Priority</th>
                                     <th style="width: 60px">Action</th>
                                 </tr>
                             </thead>
@@ -362,20 +488,20 @@
                                             <i class="bi bi-calendar3"></i> {{ schedule.day }} {{ schedule.time }}
                                         </small>
                                     </td>
-                                    <td><span class="badge bg-info">{{ item.credits }}</span></td>
+                                    <td>{{ item.credits }}</td>
                                     <td>{{ item.policy }}</td>
+                                    <td><span class="badge bg-warning text-dark">Priority {{ item.priority }}</span></td>
                                     <td>
-                                        <button @click="removeFromEnrollment(item.id)" class="btn btn-sm btn-outline-danger" title="Remove">
+                                        <button @click="removeEnrollment(item.id)" class="btn btn-sm btn-outline-danger" title="Remove">
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </td>
                                 </tr>
                             </tbody>
-                            <tfoot class="table-light">
+                            <tfoot>
                                 <tr>
-                                    <td colspan="4" class="text-end fw-bold">Total:</td>
-                                    <td class="fw-bold">{{ totalCredits }} credits</td>
-                                    <td colspan="4"></td>
+                                    <td colspan="4" class="fw-bold text-end">Total Credits:</td>
+                                    <td colspan="4" class="fw-bold">{{ totalCredits }} credits</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -388,11 +514,91 @@
                 </div>
                 <div v-if="enrollments.length > 0" class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="text-muted small">
-                        <i class="bi bi-info-circle"></i> Click Validate to review your enrollment
+                        <i class="bi bi-info-circle"></i> Click Validate to submit your enrollment
                     </div>
-                    <button @click="submitAllEnrollments" class="btn btn-success btn-lg">
-                        <i class="bi bi-check-circle-fill me-2"></i> Submit All Enrollments ({{ enrollments.length }} items)
+                    <button @click="validateEnrollments" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle me-2"></i> Validate
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="searchModalLabel">
+                        <i class="bi bi-search me-2"></i>Search Course
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Keyword</label>
+                        <input type="text" class="form-control form-control-lg" v-model="searchKeyword"
+                            placeholder="Search by course code, name, or tags..."
+                            @keyup.enter="performSearch">
+                        <div class="form-text">Search in course code, name, and tags</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-primary" @click="performSearch">
+                            <i class="bi bi-search me-2"></i>Search
+                        </button>
+                        <button type="button" class="btn btn-secondary ms-2" @click="clearSearch">
+                            <i class="bi bi-x-circle me-2"></i>Clear
+                        </button>
+                    </div>
+
+                    <!-- Search Results Table -->
+                    <div v-if="searchResults.length > 0" class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Course Name</th>
+                                    <th>Semester</th>
+                                    <th>Tags</th>
+                                    <th>Status</th>
+                                    <th style="width: 80px">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="subject in searchResults" :key="subject.id" :class="{ 'table-success': isCourseCompleted(subject.id) }">
+                                    <td><strong>{{ subject.code }}</strong></td>
+                                    <td>{{ subject.name }}</td>
+                                    <td><span class="badge bg-secondary">Sem {{ subject.semester }}</span></td>
+                                    <td>
+                                        <span v-for="(tag, idx) in subject.tags" :key="idx" class="badge bg-info me-1">
+                                            {{ tag }}
+                                        </span>
+                                        <span v-if="!subject.tags?.length" class="text-muted">-</span>
+                                    </td>
+                                    <td>
+                                        <span v-if="isCourseCompleted(subject.id)" class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Completed
+                                        </span>
+                                        <span v-else class="badge bg-warning text-dark">Available</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-success"
+                                            @click="takeSubject(subject.id)"
+                                            :disabled="isCourseCompleted(subject.id)">
+                                            <i class="bi bi-check-circle"></i> Take
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else-if="searched && searchResults.length === 0" class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No courses found matching "{{ searchKeyword }}"
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

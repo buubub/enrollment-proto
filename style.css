@@ -15,6 +15,21 @@
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 }
 
+/* Disabled card styling */
+.card-class.card-disabled {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+.card-class.card-disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.card-class .form-check-input:disabled {
+    cursor: not-allowed;
+}
+
 /* Active button styles */
 .btn-outline-primary.active {
     background-color: #0d6efd;
