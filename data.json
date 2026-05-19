@@ -1,0 +1,449 @@
+{
+    "subjects": [
+        {
+            "id": 1,
+            "code": "TF0001",
+            "name": "Algoritma & Pemrograman Dasar",
+            "category": "program",
+            "semester": 1,
+            "credits": 4,
+            "policy": "Mandatory",
+            "tags": ["Programming", "Core", "Algorithm", "Lab Required"],
+            "description": "Introduction to algorithm design, flowcharts, pseudocode, and basic programming concepts using Python. Covers variables, conditionals, loops, functions, and basic data structures.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 1,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 1, "day": "Monday", "time": "08:00 - 10:00", "room": "Lab 101" },
+                        { "id": 2, "day": "Wednesday", "time": "08:00 - 10:00", "room": "Lab 101" }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 3, "day": "Monday", "time": "10:00 - 12:00", "room": "Lab 102" },
+                        { "id": 4, "day": "Wednesday", "time": "10:00 - 12:00", "room": "Lab 102" }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "name": "C",
+                    "schedules": [
+                        { "id": 5, "day": "Tuesday", "time": "13:00 - 15:00", "room": "Lab 103" },
+                        { "id": 6, "day": "Thursday", "time": "13:00 - 15:00", "room": "Lab 103" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "code": "TF0002",
+            "name": "Struktur Data",
+            "category": "program",
+            "semester": 2,
+            "credits": 4,
+            "policy": "Mandatory",
+            "tags": ["Data Structures", "Core", "Algorithms", "Lab Required"],
+            "description": "Advanced programming concepts covering arrays, linked lists, stacks, queues, trees, graphs, and hash tables. Implementation and analysis of data structures.",
+            "prerequisites": [1],
+            "classes": [
+                {
+                    "id": 4,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 7, "day": "Monday", "time": "13:00 - 15:00", "room": "Lab 201" },
+                        { "id": 8, "day": "Wednesday", "time": "13:00 - 15:00", "room": "Lab 201" }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 9, "day": "Tuesday", "time": "08:00 - 10:00", "room": "Lab 202" },
+                        { "id": 10, "day": "Thursday", "time": "08:00 - 10:00", "room": "Lab 202" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "code": "TF0003",
+            "name": "Basis Data",
+            "category": "program",
+            "semester": 3,
+            "credits": 3,
+            "policy": "Mandatory",
+            "tags": ["Database", "SQL", "Core", "Lab Required"],
+            "description": "Database design concepts, ER diagrams, normalization, SQL queries, stored procedures, and database management systems (MySQL/PostgreSQL).",
+            "prerequisites": [1],
+            "classes": [
+                {
+                    "id": 6,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 11, "day": "Monday", "time": "10:00 - 12:00", "room": "Lab 301" },
+                        { "id": 12, "day": "Wednesday", "time": "10:00 - 12:00", "room": "Lab 301" }
+                    ]
+                },
+                {
+                    "id": 7,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 13, "day": "Thursday", "time": "13:00 - 15:00", "room": "W.405" },
+                        { "id": 14, "day": "Friday", "time": "13:00 - 15:00", "room": "W.405" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "code": "TF0004",
+            "name": "Pemrograman Berorientasi Objek",
+            "category": "program",
+            "semester": 3,
+            "credits": 4,
+            "policy": "Mandatory",
+            "tags": ["OOP", "Java", "Core", "Lab Required"],
+            "description": "Object-oriented programming concepts: classes, objects, inheritance, polymorphism, encapsulation, abstraction using Java/C++. Design patterns and UML.",
+            "prerequisites": [1],
+            "classes": [
+                {
+                    "id": 8,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 15, "day": "Tuesday", "time": "10:00 - 12:00", "room": "Lab 203" },
+                        { "id": 16, "day": "Thursday", "time": "10:00 - 12:00", "room": "Lab 203" }
+                    ]
+                },
+                {
+                    "id": 9,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 17, "day": "Monday", "time": "15:00 - 17:00", "room": "Lab 204" },
+                        { "id": 18, "day": "Wednesday", "time": "15:00 - 17:00", "room": "Lab 204" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "code": "TF0005",
+            "name": "Sistem Operasi",
+            "category": "program",
+            "semester": 4,
+            "credits": 3,
+            "policy": "Mandatory",
+            "tags": ["OS", "Core", "Systems"],
+            "description": "Operating system concepts: processes, threads, scheduling, memory management, file systems, I/O systems, and virtualization.",
+            "prerequisites": [2],
+            "classes": [
+                {
+                    "id": 10,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 19, "day": "Monday", "time": "08:00 - 10:00", "room": "W.501" },
+                        { "id": 20, "day": "Wednesday", "time": "08:00 - 10:00", "room": "W.501" }
+                    ]
+                },
+                {
+                    "id": 11,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 21, "day": "Tuesday", "time": "13:00 - 15:00", "room": "W.502" },
+                        { "id": 22, "day": "Thursday", "time": "13:00 - 15:00", "room": "W.502" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "code": "TF0006",
+            "name": "Jaringan Komputer",
+            "category": "program",
+            "semester": 4,
+            "credits": 3,
+            "policy": "Mandatory",
+            "tags": ["Networking", "Core", "Lab Required"],
+            "description": "Computer networks: OSI model, TCP/IP, routing, switching, network security, socket programming, and network configuration.",
+            "prerequisites": [2],
+            "classes": [
+                {
+                    "id": 12,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 23, "day": "Monday", "time": "13:00 - 15:00", "room": "NetLab 101" },
+                        { "id": 24, "day": "Wednesday", "time": "13:00 - 15:00", "room": "NetLab 101" }
+                    ]
+                },
+                {
+                    "id": 13,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 25, "day": "Friday", "time": "08:00 - 12:00", "room": "NetLab 102" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7,
+            "code": "TF0007",
+            "name": "Pemrograman Web",
+            "category": "program",
+            "semester": 4,
+            "credits": 3,
+            "policy": "Mandatory",
+            "tags": ["Web Development", "Frontend", "Backend", "Lab Required"],
+            "description": "Web development: HTML5, CSS3, JavaScript, React/Vue frameworks, backend with Node.js/PHP, and database integration.",
+            "prerequisites": [1, 3],
+            "classes": [
+                {
+                    "id": 14,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 26, "day": "Tuesday", "time": "08:00 - 10:00", "room": "Lab 305" },
+                        { "id": 27, "day": "Thursday", "time": "08:00 - 10:00", "room": "Lab 305" }
+                    ]
+                },
+                {
+                    "id": 15,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 28, "day": "Monday", "time": "15:00 - 17:00", "room": "Lab 306" },
+                        { "id": 29, "day": "Wednesday", "time": "15:00 - 17:00", "room": "Lab 306" }
+                    ]
+                },
+                {
+                    "id": 16,
+                    "name": "C",
+                    "schedules": [
+                        { "id": 30, "day": "Saturday", "time": "08:00 - 12:00", "room": "Lab 307" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8,
+            "code": "TF0008",
+            "name": "Kecerdasan Buatan",
+            "category": "program",
+            "semester": 5,
+            "credits": 3,
+            "policy": "Elective",
+            "tags": ["AI", "Machine Learning", "Elective"],
+            "description": "Artificial Intelligence: search algorithms, knowledge representation, machine learning basics, neural networks, and natural language processing.",
+            "prerequisites": [2, 9],
+            "classes": [
+                {
+                    "id": 17,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 31, "day": "Monday", "time": "10:00 - 12:00", "room": "W.601" },
+                        { "id": 32, "day": "Wednesday", "time": "10:00 - 12:00", "room": "W.601" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 9,
+            "code": "MATH001",
+            "name": "Matematika Diskrit",
+            "category": "faculty",
+            "semester": 2,
+            "credits": 3,
+            "policy": "Compulsory",
+            "tags": ["Mathematics", "Faculty", "Logic"],
+            "description": "Discrete mathematics: set theory, logic, combinatorics, graph theory, recurrence relations, and number theory for computing.",
+            "prerequisites": [10],
+            "classes": [
+                {
+                    "id": 18,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 33, "day": "Tuesday", "time": "10:00 - 12:00", "room": "W.201" },
+                        { "id": 34, "day": "Thursday", "time": "10:00 - 12:00", "room": "W.201" }
+                    ]
+                },
+                {
+                    "id": 19,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 35, "day": "Wednesday", "time": "13:00 - 15:00", "room": "W.202" },
+                        { "id": 36, "day": "Friday", "time": "13:00 - 15:00", "room": "W.202" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 10,
+            "code": "MATH002",
+            "name": "Kalkulus",
+            "category": "faculty",
+            "semester": 1,
+            "credits": 4,
+            "policy": "Compulsory",
+            "tags": ["Mathematics", "Faculty", "Calculus"],
+            "description": "Calculus fundamentals: limits, derivatives, integrals, and their applications in computing and engineering.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 20,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 37, "day": "Monday", "time": "08:00 - 10:00", "room": "W.101" },
+                        { "id": 38, "day": "Wednesday", "time": "08:00 - 10:00", "room": "W.101" }
+                    ]
+                },
+                {
+                    "id": 21,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 39, "day": "Tuesday", "time": "13:00 - 15:00", "room": "W.102" },
+                        { "id": 40, "day": "Thursday", "time": "13:00 - 15:00", "room": "W.102" }
+                    ]
+                },
+                {
+                    "id": 22,
+                    "name": "C",
+                    "schedules": [
+                        { "id": 41, "day": "Saturday", "time": "08:00 - 12:00", "room": "W.103" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 11,
+            "code": "DMU001",
+            "name": "Pendidikan Agama",
+            "category": "dmu",
+            "semester": 1,
+            "credits": 2,
+            "policy": "Compulsory",
+            "tags": ["Religion", "University Wide", "Character"],
+            "description": "Religious education, ethics, moral values, and character building based on religious teachings.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 23,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 42, "day": "Monday", "time": "10:00 - 12:00", "room": "R.101" },
+                        { "id": 43, "day": "Wednesday", "time": "10:00 - 12:00", "room": "R.101" }
+                    ]
+                },
+                {
+                    "id": 24,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 44, "day": "Tuesday", "time": "08:00 - 10:00", "room": "R.102" },
+                        { "id": 45, "day": "Thursday", "time": "08:00 - 10:00", "room": "R.102" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 12,
+            "code": "DMU002",
+            "name": "Pancasila & Kewarganegaraan",
+            "category": "dmu",
+            "semester": 2,
+            "credits": 2,
+            "policy": "Compulsory",
+            "tags": ["Civic", "University Wide", "Nationalism"],
+            "description": "Indonesian national ideology (Pancasila), constitution, civic rights and responsibilities, and nationalism.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 25,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 46, "day": "Wednesday", "time": "08:00 - 10:00", "room": "R.201" },
+                        { "id": 47, "day": "Friday", "time": "08:00 - 10:00", "room": "R.201" }
+                    ]
+                },
+                {
+                    "id": 26,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 48, "day": "Thursday", "time": "13:00 - 15:00", "room": "R.202" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "code": "DMU003",
+            "name": "Bahasa Indonesia",
+            "category": "dmu",
+            "semester": 1,
+            "credits": 2,
+            "policy": "Compulsory",
+            "tags": ["Language", "University Wide"],
+            "description": "Indonesian language proficiency, scientific writing, academic papers, and effective communication.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 27,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 49, "day": "Tuesday", "time": "10:00 - 12:00", "room": "W.301" },
+                        { "id": 50, "day": "Thursday", "time": "10:00 - 12:00", "room": "W.301" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 14,
+            "code": "ENG001",
+            "name": "Bahasa Inggris Teknik",
+            "category": "dmu",
+            "semester": 2,
+            "credits": 2,
+            "policy": "Compulsory",
+            "tags": ["English", "University Wide", "Technical Writing"],
+            "description": "Technical English for computing: reading comprehension, technical documentation, presentation skills, and academic writing.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 28,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 51, "day": "Monday", "time": "13:00 - 15:00", "room": "W.401" },
+                        { "id": 52, "day": "Wednesday", "time": "13:00 - 15:00", "room": "W.401" }
+                    ]
+                },
+                {
+                    "id": 29,
+                    "name": "B",
+                    "schedules": [
+                        { "id": 53, "day": "Friday", "time": "10:00 - 12:00", "room": "W.402" },
+                        { "id": 54, "day": "Friday", "time": "13:00 - 15:00", "room": "W.402" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 15,
+            "code": "ENT001",
+            "name": "Kewirausahaan & Inovasi Digital",
+            "category": "other",
+            "semester": 5,
+            "credits": 2,
+            "policy": "Elective",
+            "tags": ["Entrepreneurship", "Business", "Startup"],
+            "description": "Digital entrepreneurship, business models, startup development, innovation management, and tech business strategies.",
+            "prerequisites": [],
+            "classes": [
+                {
+                    "id": 30,
+                    "name": "A",
+                    "schedules": [
+                        { "id": 55, "day": "Tuesday", "time": "15:00 - 17:00", "room": "W.501" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

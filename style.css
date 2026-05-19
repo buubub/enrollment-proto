@@ -1,0 +1,42 @@
+/* Visual feedback for selected card */
+.card-class {
+    transition: all 0.2s ease;
+}
+
+.card-class:has(input:checked) {
+    border-color: #0d6efd !important;
+    background-color: #f0f8ff;
+    box-shadow: 0 0.125rem 0.25rem rgba(13, 110, 253, 0.1);
+}
+
+/* Hover effect */
+.card-class:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Active button styles */
+.btn-outline-primary.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-outline-success.active {
+    background-color: #198754;
+    color: white;
+}
+
+.btn-outline-info.active {
+    background-color: #0dcaf0;
+    color: white;
+}
+
+.btn-outline-warning.active {
+    background-color: #ffc107;
+    color: white;
+}
+
+.btn-outline-secondary.active {
+    background-color: #6c757d;
+    color: white;
+}
